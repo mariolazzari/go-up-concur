@@ -373,3 +373,154 @@ func main() {
 	}
 }
 ```
+
+## I/O vs CPU bound
+
+### CPU bound
+
+#### Sequential
+
+```go
+// This is NON concurrent code
+package main
+
+import (
+	"fmt"
+	"runtime"
+	"time"
+)
+
+func main() {
+	fmt.Println(runtime.GOMAXPROCS(0))
+	runtime.GOMAXPROCS(16) // Extra processors don't help w sequential tasks
+
+	start := time.Now()
+	counta()
+	countb()
+	countc()
+	countd()
+	counte()
+	countf()
+	countg()
+	counth()
+
+	elapsed := time.Since(start)
+	fmt.Printf("Processes took %s", elapsed)
+}
+func counta() {
+	fmt.Println("AAAA is starting  ")
+	for i := 1; i < 10_000_000_000; i++ {
+	}
+
+	fmt.Println("AAAA is done  ")
+
+}
+func countb() {
+	fmt.Println("BBBB is starting  ")
+	for i := 1; i < 10_000_000_000; i++ {
+	}
+
+	fmt.Println("BBBB is done")
+
+}
+func countc() {
+	fmt.Println("CCCC is starting  ")
+	for i := 1; i < 10_000_000_000; i++ {
+	}
+
+	fmt.Println("CCCC is done    ")
+
+}
+func countd() {
+	fmt.Println("DDDD is starting  ")
+	for i := 1; i < 10_000_000_000; i++ {
+	}
+
+	fmt.Println("DDDD is done     ")
+
+}
+func counte() {
+	fmt.Println("EEEE is starting  ")
+	for i := 1; i < 10_000_000_000; i++ {
+	}
+
+	fmt.Println("EEEE is done   ")
+
+}
+func countf() {
+	fmt.Println("FFFF is starting  ")
+	for i := 1; i < 10_000_000_000; i++ {
+	}
+
+	fmt.Println("FFFF is done     ")
+
+}
+func countg() {
+	fmt.Println("GGGG is starting  ")
+	for i := 1; i < 10_000_000_000; i++ {
+	}
+
+	fmt.Println("GGGG is done     ")
+
+}
+func counth() {
+	fmt.Println("HHHH is starting  ")
+	for i := 1; i < 10_000_000_000; i++ {
+	}
+
+	fmt.Println("HHHH is done     ")
+
+}
+```
+
+#### I/O bound
+
+```go
+package main
+
+import (
+	"fmt"
+	"net/http"
+	"runtime"
+	"time"
+)
+
+func main() {
+	runtime.GOMAXPROCS(16) // Extra processors don't help with sequential tasks
+	fmt.Println(runtime.NumCPU())
+
+	links := []string{
+		"http://hashnode.com",
+		"http://dev.to",
+		"http://stackoverflow.com",
+		"http://golang.org",
+		"http://medium.com",
+		"http://github.com",
+		"http://techcrunch.com",
+		"http://techrepublic.com",
+	}
+
+	start := time.Now()
+
+	for _, link := range links {
+		checkLink(link)
+	}
+
+	elapsed := time.Since(start)
+	fmt.Printf("Processes took %s", elapsed)
+}
+
+func checkLink(link string) {
+	_, err := http.Get(link)
+	if err != nil {
+		fmt.Println(link, "is not responding!")
+
+		return
+	}
+	fmt.Println(link, "is LIVE!")
+}
+```
+
+## Race conditions
+
+### Mutex
