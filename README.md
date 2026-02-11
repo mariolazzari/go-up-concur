@@ -188,3 +188,188 @@ func doTheSecondThing() {
 ```
 
 ### Using WaitGroup
+
+```go
+package main
+
+import (
+	"fmt"
+	"sync"
+	"time"
+)
+
+func main() {
+	var wg = sync.WaitGroup{}
+	wg.Add(2)
+	start := time.Now()
+	go doSomething(&wg)
+	go doSomethingElse(&wg)
+	wg.Wait()
+
+	fmt.Println("\n\nI guess I'm done")
+	elapsed := time.Since(start)
+	fmt.Printf("Processes took %s", elapsed)
+}
+
+func doSomething(wg *sync.WaitGroup) {
+	defer wg.Done()
+	time.Sleep(time.Second * 2)
+	fmt.Println("\nI've done something")
+}
+
+func doSomethingElse(wg *sync.WaitGroup) {
+	defer wg.Done()
+	time.Sleep(time.Second * 2)
+	fmt.Println("I've done something else")
+}
+```
+
+## Using channels
+
+### Syntax
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+func main() {
+	ch := make(chan string)
+	// ch <- "hello from main" //This won't work since it blocks
+	go sendMe(ch)
+	for i := 1; i < 2; i++ { // This for loop just reads the channel as messages come in.
+		fmt.Println(<-ch)
+	}
+}
+
+func sendMe(ch chan<- string) {
+	time.Sleep(time.Second * 2)
+	ch <- "SendMe is done"
+}
+```
+
+### Using channels
+
+```go
+package main
+
+import (
+	"fmt"
+	"time"
+)
+
+var ch = make(chan string)
+
+func main() {
+	start := time.Now()
+	go doSomething()
+	go doSomethingElse()
+
+	fmt.Println(<-ch)
+	fmt.Println(<-ch)
+
+	fmt.Println("I guess I'm done")
+	elapsed := time.Since(start)
+	fmt.Printf("Processes took %s", elapsed)
+}
+
+func doSomething() {
+	time.Sleep(time.Second * 2)
+	fmt.Println("\nI've done something")
+	ch <- "doSomething finished"
+}
+
+func doSomethingElse() {
+	time.Sleep(time.Second * 2)
+	fmt.Println("I've done something else")
+	ch <- "doSomethingElse finished"
+}
+```
+
+#### Buffered channels
+
+From [Youtube](https://www.youtube.com/watch?v=LvgVSSpwND8&t=563s) "Concurrency in Go" tutorial by Jake Wright
+
+```go
+package main
+
+import (
+	"fmt"
+)
+
+func main() {
+
+	c := make(chan string, 3) // channel doesn't block until full ("buffered" channel)
+	c <- "Hello "
+	c <- "Earth "
+	c <- "from Mars"
+	//c <- "from Venus"
+
+	msg := <-c
+	fmt.Print(msg)
+
+	msg = <-c // Notice we used = NOT := because msg is already declared
+	fmt.Print(msg)
+
+	msg = <-c // Notice we used = NOT := because msg is already declared
+	fmt.Println(msg)
+
+}
+```
+
+#### Select statement
+
+Uses a select / case statement to monitor 2 channels and print whichever is active
+
+```go
+package main
+
+import (
+	"fmt"
+	"os"
+	"time"
+)
+
+func main() {
+	c1 := make(chan string)
+	c2 := make(chan string)
+	c3 := make(chan string)
+
+	go func() {
+		for {
+			time.Sleep(time.Second)
+			c1 <- "Sending every 1 second"
+
+		}
+	}()
+	go func() {
+		for {
+			time.Sleep(time.Second * 4)
+			c2 <- "Sending every 4 sec"
+
+		}
+	}()
+	go func() {
+		for {
+			time.Sleep(time.Second * 10)
+			c3 <- "We're done"
+		}
+	}()
+
+	for { // infinite for loop  This is the operator - listening for activity on all channels.
+		// This is a clever way to get around the blocking nature when you try to read a channel
+		select {
+		case msg := <-c1:
+			fmt.Println(msg)
+		case msg := <-c2:
+			fmt.Println(msg + " Something cool happened")
+		case msg := <-c3:
+			fmt.Println(msg)
+			os.Exit(0)
+		}
+	}
+}
+```
